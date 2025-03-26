@@ -1,0 +1,27 @@
+# Pliki i foldery Java/Maven
+target/
+*.class
+*.jar
+*.war
+*.ear
+.idea/
+*.iml
+
+# Pliki i foldery Node.js (dla frontendu)
+node_modules/
+dist/
+build/
+
+# Pliki tymczasowe i logi
+*.log
+*.tmp
+*.bak
+
+# Pliki systemowe
+.DS_Store
+Thumbs.db
+
+# Pliki konfiguracyjne z wrażliwymi danymi
+*.env
+application.properties
+application.yml
