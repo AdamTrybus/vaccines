@@ -13,6 +13,9 @@ public class ProducerController {
 
     @PostMapping("/request")
     public ResponseEntity<ProducerResponse> handleOrderRequest(@RequestBody OrderRequest orderRequest) {
+        if (orderRequest.getOrderId() == null) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST); //
+        }
         ProducerResponse response = producerService.processOrderRequest(orderRequest);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
