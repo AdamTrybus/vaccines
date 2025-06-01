@@ -41,14 +41,14 @@ public class OrderService {
         orderRequest.setVaccineQuantity(savedOrder.getVaccineQuantity());
 
         // Notify producer-service
-        try {
-            restTemplate.postForObject("http://gateway:8080/api/producers/request", orderRequest, Void.class);
-            logger.info("Successfully notified producer-service for order ID: {}", savedOrder.getId());
-        } catch (ResourceAccessException ex) {
-            logger.error("Failed to notify producer-service for order ID: {}. Error: {}", savedOrder.getId(), ex.getMessage(), ex);
-            savedOrder.setStatus("PENDING_NOTIFICATION_FAILED");
-            orderRepository.save(savedOrder);
-        }
+//        try {
+//            restTemplate.postForObject("http://gateway:8080/api/producers/request", orderRequest, Void.class);
+//            logger.info("Successfully notified producer-service for order ID: {}", savedOrder.getId());
+//        } catch (ResourceAccessException ex) {
+//            logger.error("Failed to notify producer-service for order ID: {}. Error: {}", savedOrder.getId(), ex.getMessage(), ex);
+//            savedOrder.setStatus("PENDING_NOTIFICATION_FAILED");
+//            orderRepository.save(savedOrder);
+//        }
 
         return savedOrder;
     }

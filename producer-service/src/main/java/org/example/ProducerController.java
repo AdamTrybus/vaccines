@@ -5,29 +5,30 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/producers")
 public class ProducerController {
     @Autowired
     private ProducerService producerService;
 
-    @PostMapping("/request")
-    public ResponseEntity<ProducerResponse> handleOrderRequest(@RequestBody OrderRequest orderRequest) {
-        if (orderRequest.getOrderId() == null) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST); //
+    @PostMapping("/register-capacity")
+    public ResponseEntity<?> registerProducerCapacity(@RequestBody ProducerCapacityRequest capacityRequest) {
+        try {
+            ProducerCapacity savedCapacity = producerService.registerProducerCapacity(capacityRequest);
+            return new ResponseEntity<>(savedCapacity, HttpStatus.CREATED);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
-        ProducerResponse response = producerService.processOrderRequest(orderRequest);
-        return new ResponseEntity<>(response, HttpStatus.OK);
     }
-}
 
-// Klasa pomocnicza do受け取ania żądania od Ordering Service
-class OrderRequest {
-    private Long orderId;
-    private int vaccineQuantity;
-
-    public Long getOrderId() { return orderId; }
-    public void setOrderId(Long orderId) { this.orderId = orderId; }
-    public int getVaccineQuantity() { return vaccineQuantity; }
-    public void setVaccineQuantity(int vaccineQuantity) { this.vaccineQuantity = vaccineQuantity; }
+    @GetMapping("/capacities/all")
+    public ResponseEntity<List<ProducerCapacity>> getAllCapacities() {
+        List<ProducerCapacity> capacities = producerService.getAllProducerCapacities();
+        if (capacities.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        return new ResponseEntity<>(capacities, HttpStatus.OK);
+    }
 }

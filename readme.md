@@ -16,19 +16,21 @@ To run the project, you need to install the following:
 - **Java 17**: For running Spring Boot microservices.
 - **Node.js 18+**: For running the React frontend.
 - **Maven**: For building Java projects.
-- **PostgreSQL**: For the database.
+- **PostgreSQL**: For the database (though Docker will handle this for you).
 - **Git**: For cloning the repository.
+- **Docker & Docker Compose**: For running the microservices and database in containers.
 
-### Installing PostgreSQL
+### Installing PostgreSQL (Optional for local setup)
 
+If you're not using Docker Compose for the database, you can install PostgreSQL manually.
 1. Download and install PostgreSQL from [https://www.postgresql.org/download/](https://www.postgresql.org/download/).
 2. During installation, set a password for the `postgres` user (e.g., `your_password`).
 3. After installation, create a database named `vaccines_db`:
-    - Open a PostgreSQL client (e.g., pgAdmin or `psql`) and run:
-      ```sql
-      CREATE DATABASE vaccines_db;
-      ```
-
+  - Open a PostgreSQL client (e.g., pgAdmin or `psql`) and run:
+    ```sql
+    CREATE DATABASE vaccines_db;
+    ```
+    
 ## Database Tables
 
 The project uses a PostgreSQL database (`vaccines_db`) with the following table:
