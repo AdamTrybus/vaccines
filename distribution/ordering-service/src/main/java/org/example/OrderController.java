@@ -13,6 +13,7 @@ public class OrderController {
     @Autowired
     private OrderService orderService;
 
+
     @PostMapping
     public ResponseEntity<Order> createOrder(@RequestBody Order order) {
         Order createdOrder = orderService.createOrder(order);
@@ -25,8 +26,30 @@ public class OrderController {
         return ResponseEntity.ok(order);
     }
 
+    @GetMapping("/region/{region}")
+    public ResponseEntity<List<Order>> getOrdersByRegion(@PathVariable String region) {
+        List<Order> orders = orderService.getOrdersByRegion(region);
+        return ResponseEntity.ok(orders);
+    }
+
     @GetMapping
     public List<Order> getAllOrders() {
         return orderService.findAllOrders();
+    }
+
+    @PatchMapping("/{id}/priority")
+    public ResponseEntity<Order> prioritizeOrder(@PathVariable Long id) {
+        Order order = orderService.getOrder(id);
+        if (!"EXPIRED".equals(order.getStatus())) {
+            return ResponseEntity.badRequest().build();
+        }
+        Order updatedOrder = orderService.updateOrderStatus(id, "PRIORITY");
+        return ResponseEntity.ok(updatedOrder);
+    }
+
+    @PatchMapping("/{id}/cancel")
+    public ResponseEntity<Order> cancelOrder(@PathVariable Long id) {
+        Order updatedOrder = orderService.updateOrderStatus(id, "CANCELLED");
+        return ResponseEntity.ok(updatedOrder);
     }
 }

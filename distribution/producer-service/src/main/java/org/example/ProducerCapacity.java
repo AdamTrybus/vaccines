@@ -15,6 +15,7 @@ public class ProducerCapacity {
     private String producerName;
     private int vaccinesQuantity;
     private String productionDeadline;
+    private int excessVaccines;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -24,4 +25,6 @@ public class ProducerCapacity {
     public void setVaccinesQuantity(int vaccinesQuantity) { this.vaccinesQuantity = vaccinesQuantity; }
     public String getProductionDeadline() { return productionDeadline; }
     public void setProductionDeadline(String productionDeadline) { this.productionDeadline = productionDeadline; }
+    public int getExcessVaccines() { return excessVaccines; }
+    public void setExcessVaccines(int excessVaccines) { this.excessVaccines = excessVaccines; }
 }
