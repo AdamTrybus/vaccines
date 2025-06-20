@@ -190,17 +190,18 @@ docker exec -it <postgres-container-name> psql -U postgres -d mydb
 CREATE TABLE vaccine_orders (
     id SERIAL PRIMARY KEY,
     region VARCHAR(255) NOT NULL,
-    cases INT NOT NULL,
     vaccine_quantity INT NOT NULL ,
+    fulfilled_quantity INT NOT NULL,
     expected_delivery_time DATE NOT NULL,
     status VARCHAR(50) NOT NULL
 );
 
 CREATE TABLE producer_response (
     id SERIAL PRIMARY KEY,
-    order_id INT NOT NULL,
+    producer_name VARCHAR(255) NOT NULL,
+    vaccines_quantity INT NOT NULL,
+    excess_vaccines INT NOT NULL,
     available_vaccines INT NOT NULL,
-    delivery_time VARCHAR(255) NOT NULL,
-    CONSTRAINT fk_order FOREIGN KEY (order_id) REFERENCES vaccine_orders(id)
+    production_dadline VARCHAR(255) NOT NULL
 );
 ```

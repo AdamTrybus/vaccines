@@ -20,8 +20,6 @@ public class OrderService {
     @Autowired
     private RestTemplate restTemplate;
 
-    @Autowired
-
     public Order createOrder(Order order) {
         if (order.getRegion() == null || order.getRegion().trim().isEmpty()) {
             throw new IllegalArgumentException("Region cannot be empty");
@@ -98,5 +96,9 @@ public class OrderService {
         Order order = getOrder(id);
         order.setStatus(newStatus);
         return orderRepository.save(order);
+    }
+
+    public List<Order> getPendingOrders() {
+        return orderRepository.findByStatusIn(List.of("PENDING"));
     }
 }

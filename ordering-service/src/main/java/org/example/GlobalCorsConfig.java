@@ -18,6 +18,8 @@ public class GlobalCorsConfig {
         configuration.addAllowedOrigin("http://frontend:3000");
         configuration.addAllowedOrigin("http://localhost:8080");
         configuration.addAllowedOrigin("http://gateway:8080");
+        configuration.addAllowedOrigin("http://localhost:8082");
+        configuration.addAllowedOrigin("http://producer:8082");
 
         // Allow any HTTP methods (GET, POST, etc.)
         configuration.addAllowedMethod("*");

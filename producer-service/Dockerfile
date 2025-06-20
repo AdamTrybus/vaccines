@@ -3,4 +3,4 @@ WORKDIR /app
 COPY pom.xml .
 COPY src ./src
 
-CMD ["mvn", "spring-boot:run"]
+CMD ["mvn", "spring-boot:run -X"]

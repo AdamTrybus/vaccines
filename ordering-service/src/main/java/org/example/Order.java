@@ -10,23 +10,28 @@ import lombok.Setter;
 @Getter
 @Setter
 public class Order {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
     private String region;
     private int vaccineQuantity;
     private int fulfilledQuantity;
     private String status;
-    private String expectedDeliveryTime;
+    private LocalDate expectedDeliveryTime;
 
     // Getters
     public String getRegion() { return region; }
     public int getVaccineQuantity() { return vaccineQuantity; }
     public int getFulfilledQuantity() { return fulfilledQuantity; }
     public String getStatus() { return status; }
-    public String getExpectedDeliveryTime() { return expectedDeliveryTime; }
+    public LocalDate getExpectedDeliveryTime() { return expectedDeliveryTime; }
 
     // Setters
     public void setRegion(String region) { this.region = region; }
     public void setVaccineQuantity(int vaccineQuantity) { this.vaccineQuantity = vaccineQuantity; }
     public void setFulfilledQuantity(int fulfilledQuantity) { this.fulfilledQuantity = fulfilledQuantity; }
     public void setStatus(String status) { this.status = status; }
-    public void setExpectedDeliveryTime(String expectedDeliveryTime) { this.expectedDeliveryTime = expectedDeliveryTime; }
+    public void setExpectedDeliveryTime(LocalDate expectedDeliveryTime) { this.expectedDeliveryTime = expectedDeliveryTime; }
 }

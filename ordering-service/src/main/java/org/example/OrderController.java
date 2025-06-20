@@ -20,21 +20,15 @@ public class OrderController {
         return new ResponseEntity<>(createdOrder, HttpStatus.CREATED);
     }
 
+    @GetMapping
+    public List<Order> getAllOrders() {
+        return orderService.findAllOrders();
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<Order> getOrder(@PathVariable Long id) {
         Order order = orderService.getOrder(id);
         return ResponseEntity.ok(order);
-    }
-
-    @GetMapping("/region/{region}")
-    public ResponseEntity<List<Order>> getOrdersByRegion(@PathVariable String region) {
-        List<Order> orders = orderService.getOrdersByRegion(region);
-        return ResponseEntity.ok(orders);
-    }
-
-    @GetMapping
-    public List<Order> getAllOrders() {
-        return orderService.findAllOrders();
     }
 
     @PatchMapping("/{id}/priority")
@@ -52,4 +46,28 @@ public class OrderController {
         Order updatedOrder = orderService.updateOrderStatus(id, "CANCELLED");
         return ResponseEntity.ok(updatedOrder);
     }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<Order> updateStatus(@PathVariable Long id, @RequestParam String newStatus) {
+        Order updatedOrder = orderService.updateOrderStatus(id, newStatus);
+        return ResponseEntity.ok(updatedOrder);
+    }
+
+    @GetMapping("/region/{region}")
+    public ResponseEntity<List<Order>> getOrdersByRegion(@PathVariable String region) {
+        List<Order> orders = orderService.getOrdersByRegion(region);
+        return ResponseEntity.ok(orders);
+    }
+
+    @GetMapping("/pending")
+    public List<Order> getPendingOrders() {
+        return orderService.getPendingOrders();
+    }
+
+    @PostMapping("/fulfill")
+    public ResponseEntity<Integer> fulfillOrders(@RequestParam int availableVaccines) {
+        int leftover = orderService.fulfillOrders(availableVaccines);
+        return ResponseEntity.ok(leftover);
+    }
+
 }
