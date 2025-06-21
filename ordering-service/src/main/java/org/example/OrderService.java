@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.ResourceAccessException;
 import java.util.List;
+import java.time.LocalDate;
+import java.util.Optional;
 
 @Service
 public class OrderService {
@@ -31,10 +33,16 @@ public class OrderService {
             throw new IllegalArgumentException("Expected Delivery Time cannot be null");
         }
 
-        order.setStatus("PENDING");
+        order.setStatus("Pending");
         order.setFulfilledQuantity(0);
 
         Order savedOrder = orderRepository.save(order);
+
+        try {
+            restTemplate.postForObject("http://producer:8082/api/producers/fulfillment", null, Void.class);
+        } catch (Exception e) {
+            logger.error("Failed to trigger fulfillment after order creation", e);
+        }
 
         return savedOrder;
     }
@@ -52,23 +60,16 @@ public class OrderService {
         return orderRepository.findByRegionIgnoreCase(region);
     }
 
-    public int fulfillOrders(int vaccineCount) {
-        int remainingVaccines = vaccineCount;
-
-        List<Order> priorityOrders = orderRepository.findByStatusInOrderByExpectedDeliveryTimeAsc(
-            List.of("PRIORITY")
-        );
-
-        remainingVaccines = fulfillOrderList(priorityOrders, remainingVaccines);
-
-        if (remainingVaccines > 0) {
-            List<Order> pendingOrders = orderRepository.findByStatusInOrderByExpectedDeliveryTimeAsc(
-                List.of("PENDING")
-            );
-            remainingVaccines = fulfillOrderList(pendingOrders, remainingVaccines);
+    public int fulfillOrder(int id) {
+        Optional<Order> optionalOrder = orderRepository.findById((long) id);
+        if (optionalOrder.isPresent()) {
+            Order order = optionalOrder.get();
+            order.setStatus("Fulfilled");
+            orderRepository.save(order);
+        } else {
+            throw new IllegalArgumentException("Order not found with id " + id);
         }
-
-        return remainingVaccines;
+        return 0;
     }
 
     private int fulfillOrderList(List<Order> orders, int availableVaccines) {
@@ -81,7 +82,7 @@ public class OrderService {
 
             if (remaining >= needed) {
                 order.setFulfilledQuantity(order.getFulfilledQuantity() + needed);
-                order.setStatus("FULFILLED");
+                order.setStatus("Fulfilled");
                 orderRepository.save(order);
                 remaining -= needed;
             } else {
@@ -99,6 +100,10 @@ public class OrderService {
     }
 
     public List<Order> getPendingOrders() {
-        return orderRepository.findByStatusIn(List.of("PENDING"));
+        return orderRepository.findByStatusIn(List.of("Pending"));
+    }
+
+    public List<Order> getPriorityOrders() {
+        return orderRepository.findByStatusIn(List.of("Priority"));
     }
 }

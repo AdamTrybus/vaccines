@@ -13,6 +13,12 @@ import java.time.format.DateTimeParseException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.HttpMethod;
 import org.springframework.core.ParameterizedTypeReference;
+import java.util.Comparator;
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import org.springframework.http.ResponseEntity;
+import java.util.stream.Stream;
 
 @EnableScheduling
 @Service
@@ -27,7 +33,6 @@ public class ProducerService {
     private final String ORDERING_BASE_URL = "http://ordering:8081/api/orders";
 
     public ProducerCapacity registerProducerCapacity(ProducerCapacityRequest request) {
-
         if (request.getProducerName() == null || request.getProducerName().trim().isEmpty()) {
             throw new IllegalArgumentException("Producer name cannot be null or empty.");
         }
@@ -38,33 +43,92 @@ public class ProducerService {
             throw new IllegalArgumentException("Production deadline cannot be null or empty.");
         }
 
-        // Save the new capacity first
-        ProducerCapacity producerCapacity = new ProducerCapacity();
-        producerCapacity.setProducerName(request.getProducerName());
-        producerCapacity.setVaccinesQuantity(request.getVaccinesQuantity());
-        producerCapacity.setProductionDeadline(request.getProductionDeadline());
-        producerCapacity.setExcessVaccines(0);
-        responseRepository.save(producerCapacity);
+        LocalDate productionDeadlineDate;
+        try {
+            productionDeadlineDate = LocalDate.parse(request.getProductionDeadline());
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Invalid production deadline format. Use YYYY-MM-DD.");
+        }
 
-        int totalExcessVaccines = responseRepository.findAll().stream()
-            .mapToInt(ProducerCapacity::getExcessVaccines)
-            .sum();
+        // Save new capacity
+        ProducerCapacity newCapacity = new ProducerCapacity();
+        newCapacity.setProducerName(request.getProducerName());
+        newCapacity.setVaccinesQuantity(request.getVaccinesQuantity());
+        newCapacity.setProductionDeadline(request.getProductionDeadline());
+        newCapacity.setExcessVaccines(request.getVaccinesQuantity());
+        responseRepository.save(newCapacity);
 
-        int totalAvailableVaccines = totalExcessVaccines + request.getVaccinesQuantity();
+        // Fetch priority orders and sort them
+        ResponseEntity<Order[]> priorityResponse = restTemplate.getForEntity(
+            ORDERING_BASE_URL + "/priority", Order[].class);
+        List<Order> priorityOrders = Arrays.stream(Objects.requireNonNull(priorityResponse.getBody()))
+            .sorted(Comparator.comparing(Order::getExpectedDeliveryTime))
+            .toList();
 
+        // Fetch regular pending orders and sort them
+        ResponseEntity<Order[]> pendingResponse = restTemplate.getForEntity(
+            ORDERING_BASE_URL + "/pending", Order[].class);
+        List<Order> pendingOrders = Arrays.stream(Objects.requireNonNull(pendingResponse.getBody()))
+            .sorted(Comparator.comparing(Order::getExpectedDeliveryTime))
+            .toList();
 
-        String url = ORDERING_BASE_URL + "/fulfill?availableVaccines=" + totalAvailableVaccines;
-        int leftoverVaccines = restTemplate.postForObject(url, null, Integer.class);
+        // Combine: priority orders first
+        List<Order> allOrders = Stream.concat(priorityOrders.stream(), pendingOrders.stream())
+            .toList();
 
-        responseRepository.findAll().forEach(pc -> {
-            pc.setExcessVaccines(0);
-            responseRepository.save(pc);
-        });
+        // 2. Get all capacities sorted by deadline
+        List<ProducerCapacity> allCapacities = responseRepository.findAll().stream()
+            .sorted(Comparator.comparing((ProducerCapacity pc) -> LocalDate.parse(pc.getProductionDeadline())).reversed())
+            .collect(Collectors.toList());
 
-        producerCapacity.setExcessVaccines(leftoverVaccines);
-        responseRepository.save(producerCapacity);
+        for (Order order : pendingOrders) {
+            LocalDate orderDate = LocalDate.parse(order.getExpectedDeliveryTime());
 
-        return producerCapacity;
+            // 3. Filter capacities that can fulfill this order (deadline >= orderDate)
+            List<ProducerCapacity> validCapacities = allCapacities.stream()
+                .filter(pc -> {
+                    try {
+                        LocalDate capacityDeadline = LocalDate.parse(pc.getProductionDeadline());
+                        return capacityDeadline.isBefore(orderDate);
+                    } catch (DateTimeParseException e) {
+                        return false;
+                    }
+                })
+                .toList();
+
+            // Sum total available vaccines for these capacities (only excessVaccines)
+            int totalAvailable = validCapacities.stream()
+                .mapToInt(ProducerCapacity::getExcessVaccines)
+                .sum();
+
+            if (totalAvailable < order.getVaccineQuantity()) {
+                // Not enough capacity to fulfill this order, skip to next
+                continue;
+            }
+
+            int remainingToFulfill = order.getVaccineQuantity();
+
+            for (ProducerCapacity pc : validCapacities) {
+                int available = pc.getExcessVaccines();
+
+                if (available <= 0) continue;
+
+                int used = Math.min(available, remainingToFulfill);
+
+                // Deduct used vaccines only from excessVaccines
+                int newExcess = available - used;
+                pc.setExcessVaccines(newExcess);
+                responseRepository.save(pc);
+
+                remainingToFulfill -= used;
+                if (remainingToFulfill == 0) break;
+            }
+
+            String fulfillUrl = ORDERING_BASE_URL + "/" + order.getId() + "/fulfill";
+            restTemplate.postForObject(fulfillUrl, null, Void.class);
+        }
+
+        return newCapacity;
     }
 
     public List<ProducerCapacity> getAllProducerCapacities() {

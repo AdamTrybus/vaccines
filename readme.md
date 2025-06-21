@@ -196,12 +196,11 @@ CREATE TABLE vaccine_orders (
     status VARCHAR(50) NOT NULL
 );
 
-CREATE TABLE producer_response (
+CREATE TABLE producer_capacity (
     id SERIAL PRIMARY KEY,
     producer_name VARCHAR(255) NOT NULL,
     vaccines_quantity INT NOT NULL,
     excess_vaccines INT NOT NULL,
-    available_vaccines INT NOT NULL,
-    production_dadline VARCHAR(255) NOT NULL
+    production_deadline VARCHAR(255) NOT NULL
 );
 ```
