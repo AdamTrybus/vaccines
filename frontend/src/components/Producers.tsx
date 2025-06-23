@@ -49,7 +49,7 @@ function Producers() {
     { field: 'producerName', label: 'Producer Name' },
     { field: 'vaccinesQuantity', label: 'Total Vaccines' },
     { field: 'excessVaccines', label: 'Remaining Vaccines' },
-    { field: 'productionDeadline', label: 'Production Deadline' },
+    { field: 'productionDeadline', label: 'Fulfillment Date' },
   ];
 
   useEffect(() => {
@@ -95,6 +95,18 @@ function Producers() {
     if (!vaccinesQuantity || !productionDeadline) {
       setSubmitError("Please fill all the fields.");
       setSubmitSuccess(null);
+      return;
+    }
+
+    const deliveryDate = new Date(productionDeadline);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (deliveryDate < today) {
+      setSubmitError('Expected Fulfillment Dat cannot be in the past');
+      return;
+    }
+    if (vaccinesQuantity <= 0) {
+      setSubmitError('Vaccine quantity must be greater than 0.');
       return;
     }
 
@@ -249,7 +261,7 @@ function Producers() {
             margin="normal"
           />
           <TextField
-            label="Production Deadline"
+            label="Fulfillment Date"
             type="date"
             value={productionDeadline}
             onChange={(e) => setProductionDeadline(e.target.value)}

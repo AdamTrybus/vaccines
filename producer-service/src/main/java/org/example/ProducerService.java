@@ -62,26 +62,41 @@ public class ProducerService {
         ResponseEntity<Order[]> priorityResponse = restTemplate.getForEntity(
             ORDERING_BASE_URL + "/priority", Order[].class);
         List<Order> priorityOrders = Arrays.stream(Objects.requireNonNull(priorityResponse.getBody()))
-            .sorted(Comparator.comparing(Order::getExpectedDeliveryTime))
+            .sorted(Comparator.comparing(Order::getExpectedDeliveryTime)
+                .thenComparing(Order::getVaccineQuantity))
             .toList();
 
         // Fetch regular pending orders and sort them
         ResponseEntity<Order[]> pendingResponse = restTemplate.getForEntity(
             ORDERING_BASE_URL + "/pending", Order[].class);
         List<Order> pendingOrders = Arrays.stream(Objects.requireNonNull(pendingResponse.getBody()))
-            .sorted(Comparator.comparing(Order::getExpectedDeliveryTime))
+            .sorted(Comparator.comparing(Order::getExpectedDeliveryTime)
+                .thenComparing(Order::getVaccineQuantity))
             .toList();
 
         // Combine: priority orders first
         List<Order> allOrders = Stream.concat(priorityOrders.stream(), pendingOrders.stream())
             .toList();
 
+        // Print all orders after combining
+        System.out.println("\nAll Orders (Priority First):");
+        allOrders.forEach(order -> System.out.println(
+            "ID: " + order.getId() +
+            ", Delivery: " + order.getExpectedDeliveryTime() +
+            ", Quantity: " + order.getVaccineQuantity()
+        ));
+
         // 2. Get all capacities sorted by deadline
         List<ProducerCapacity> allCapacities = responseRepository.findAll().stream()
             .sorted(Comparator.comparing((ProducerCapacity pc) -> LocalDate.parse(pc.getProductionDeadline())).reversed())
             .collect(Collectors.toList());
 
-        for (Order order : pendingOrders) {
+        for (Order order : allOrders) {
+            System.out.println(
+                "ID: " + order.getId() +
+                ", Delivery: " + order.getExpectedDeliveryTime() +
+                ", Quantity: " + order.getVaccineQuantity()
+            );
             LocalDate orderDate = LocalDate.parse(order.getExpectedDeliveryTime());
 
             // 3. Filter capacities that can fulfill this order (deadline >= orderDate)
@@ -89,7 +104,7 @@ public class ProducerService {
                 .filter(pc -> {
                     try {
                         LocalDate capacityDeadline = LocalDate.parse(pc.getProductionDeadline());
-                        return capacityDeadline.isBefore(orderDate);
+                        return !capacityDeadline.isAfter(orderDate);
                     } catch (DateTimeParseException e) {
                         return false;
                     }
@@ -157,7 +172,6 @@ public class ProducerService {
                 try {
                     LocalDate expectedDate = LocalDate.parse(order.getExpectedDeliveryTime());
                     if (expectedDate.isBefore(today)) {
-                        // Call ordering-service to update order status to EXPIRED
                         String updateUrl = ORDERING_BASE_URL + "/" + order.getId() + "/status?newStatus=EXPIRED";
                         restTemplate.postForObject(updateUrl, null, Void.class);
                     }

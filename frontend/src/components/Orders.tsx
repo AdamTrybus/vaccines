@@ -123,6 +123,10 @@ function Orders() {
         setError('Expected Delivery Time cannot be in the past');
         return;
       }
+      if (newOrder.vaccineQuantity <= 0) {
+        setError('Vaccine quantity must be greater than 0.');
+        return;
+      }
 
       const response = await axios.post('http://localhost:8080/api/orders', {
         ...newOrder,

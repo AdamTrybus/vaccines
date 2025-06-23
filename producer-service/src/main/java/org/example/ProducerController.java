@@ -34,14 +34,16 @@ public class ProducerController {
         ResponseEntity<Order[]> priorityResponse = restTemplate.getForEntity(
             ORDERING_BASE_URL + "/priority", Order[].class);
         List<Order> priorityOrders = Arrays.stream(Objects.requireNonNull(priorityResponse.getBody()))
-            .sorted(Comparator.comparing(Order::getExpectedDeliveryTime))
+            .sorted(Comparator.comparing(Order::getExpectedDeliveryTime)
+                .thenComparing(Order::getVaccineQuantity))
             .toList();
 
         // Fetch regular pending orders and sort them
         ResponseEntity<Order[]> pendingResponse = restTemplate.getForEntity(
             ORDERING_BASE_URL + "/pending", Order[].class);
         List<Order> pendingOrders = Arrays.stream(Objects.requireNonNull(pendingResponse.getBody()))
-            .sorted(Comparator.comparing(Order::getExpectedDeliveryTime))
+            .sorted(Comparator.comparing(Order::getExpectedDeliveryTime)
+                .thenComparing(Order::getVaccineQuantity))
             .toList();
 
         // Combine: priority orders first
@@ -61,7 +63,7 @@ public class ProducerController {
                 .filter(pc -> {
                     try {
                         LocalDate capacityDeadline = LocalDate.parse(pc.getProductionDeadline());
-                        return capacityDeadline.isBefore(orderDate);
+                        return !capacityDeadline.isAfter(orderDate);
                     } catch (DateTimeParseException e) {
                         return false;
                     }
